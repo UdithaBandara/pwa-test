@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My PWA</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-512.png">
+  <link rel="apple-touch-startup-image" href="/icon-192.png">
+  <style>
+    button { margin: 10px; }
+  </style>
+</head>
+<body>
+  <button id="locationBtn">Access Location</button>
+  <button id="cameraBtn">Access Camera</button>
+  <button id="notificationBtn">Send Notification</button>
+  <button id="installBtn">Add to Home Screen</button>
+
+  <script>
+    // Location
+    const locationBtn = document.getElementById('locationBtn');
+    locationBtn.addEventListener('click', () => {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          position => alert(`Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`),
+          error => alert(`Error getting location: ${error.message}`)
+        );
+      } else {
+        alert('Geolocation is not supported by this browser.');
+      }
+    });
+
+    // Camera (requires HTTPS)
+    const cameraBtn = document.getElementById('cameraBtn');
+    cameraBtn.addEventListener('click', () => {
+      if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            document.body.appendChild(video);
+          })
+          .catch(error => alert(`Error accessing camera: ${error.message}`));
+      } else {
+        alert('Camera access is not supported by this browser.');
+      }
+    });
+
+    // Notifications
+    const notificationBtn = document.getElementById('notificationBtn');
+    notificationBtn.addEventListener('click', () => {
+      if ('Notification' in window) {
+        Notification.requestPermission()
+          .then(permission => {
+            if (permission === 'granted') {
+              new Notification('Hello from My PWA!', {
+                body: 'This is a local notification.'
+              });
+            } else {
+              alert('Notification permission denied.');
+            }
+          });
+      } else {
+        alert('Notifications are not supported by this browser.');
+      }
+    });
+
+    // Install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      deferredPrompt = event;
+      const installBtn = document.getElementById('installBtn');
+      installBtn.style.display = 'block';
+    });
+
+    const installBtn = document.getElementById('installBtn');
+    installBtn.addEventListener('click', () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(choiceResult => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('PWA installed');
+          } else {
+            console.log('PWA installation declined');
+          }
+          deferredPrompt = null;
+        });
+      }
+    });
+  </script>
+</body>
+</html>
